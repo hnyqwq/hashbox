@@ -43,3 +43,7 @@ entry/src/main/ets/
 - 文件拖拽：UDMF 统一拖拽通路（`startDataLoading` 异步落盘）
 - 扫码：`@kit.ScanKit`（系统级扫码，免权限）
 - 分段按钮：`SegmentButtonV2`（属性动画）
+
+## License
+
+本项目基于 GPL-3.0 协议开源——你可以自由地学习、使用、修改和分发，但任何基于本项目的衍生作品都必须同样以 GPL-3.0 协议完整开源（禁止闭源换皮）。详见 LICENSE。
