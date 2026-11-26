@@ -1,0 +1,17 @@
+{
+  "color": [
+    { "name": "start_window_background", "value": "#101010" },
+    { "name": "bg_color", "value": "#101010" },
+    { "name": "card_color", "value": "#1E1E20" },
+    { "name": "text_primary", "value": "#E8EAED" },
+    { "name": "text_secondary", "value": "#A8AEB4" },
+    { "name": "text_tertiary", "value": "#6E747A" },
+    { "name": "divider_color", "value": "#2E2F31" },
+    { "name": "primary_color", "value": "#4C8DF6" },
+    { "name": "success_color", "value": "#5DBB6E" },
+    { "name": "danger_color", "value": "#E56A50" },
+    { "name": "chip_bg", "value": "#26282B" },
+    { "name": "disabled_bg", "value": "#3A3D40" },
+    { "name": "hash_text_color", "value": "#7EB0FF" }
+  ]
+}
