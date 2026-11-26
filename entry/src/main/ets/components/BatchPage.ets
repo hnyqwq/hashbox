@@ -186,202 +186,242 @@ export struct BatchPage {
     }
   }
 
+  @Builder
+  inputGroup() {
+    // 文件多选 + 算法：虚线拖入区，支持点击选择或拖拽文件
+    Column() {
+      Text(this.fileUris.length === 0 ?
+        this.str($r('app.string.drop_zone_hint')) :
+        this.str($r('app.string.batch_selected_count'), this.fileUris.length))
+        .fontSize(14)
+        .fontColor(this.fileUris.length === 0 ? $r('app.color.text_secondary') : $r('app.color.text_primary'))
+        .maxLines(1)
+        .textOverflow({ overflow: TextOverflow.MARQUEE })
+        .width('100%')
+        .textAlign(TextAlign.Center)
+
+      Button(this.str($r('app.string.batch_select_files')))
+        .height(36)
+        .fontSize(13)
+        .margin({ top: 10 })
+        .backgroundColor($r('app.color.chip_bg'))
+        .fontColor($r('app.color.primary_color'))
+        .onClick(() => {
+          this.pickFiles();
+        })
+    }
+    .alignItems(HorizontalAlign.Center)
+    .padding(20)
+    .borderRadius(16)
+    .border({
+      width: 1.5,
+      style: BorderStyle.Dashed,
+      color: $r('app.color.divider_color')
+    })
+    .backgroundColor($r('app.color.card_color'))
+    .width('100%')
+    .allowDrop([utd.UniformDataType.FILE, utd.UniformDataType.FILE_URI])
+    .onDrop((event: DragEvent) => {
+      this.onDropFiles(event);
+    }, { disableDataPrefetch: true })
+
+    // 算法选择（与对比页一致的分段按钮）
+    TabSegmentButtonV2({
+      items: this.algoItems,
+      selectedIndex: this.algoIndex,
+      $selectedIndex: (index: number) => {
+        this.algoIndex = index;
+      },
+      enableStateAnimation: true
+    })
+    .width('100%')
+    .margin({ top: 12 })
+
+    // 操作行
+    Row({ space: 8 }) {
+      Button(this.running ? this.str($r('app.string.computing')) : this.str($r('app.string.batch_start')))
+        .enabled(!this.running && this.fileUris.length > 0)
+        .layoutWeight(1)
+        .height(40)
+        .fontSize(14)
+        .backgroundColor(this.running || this.fileUris.length === 0 ?
+          $r('app.color.disabled_bg') : $r('app.color.primary_color'))
+        .fontColor(this.running || this.fileUris.length === 0 ?
+          $r('app.color.text_tertiary') : $r('app.color.card_color'))
+        .onClick(() => {
+          this.runBatch();
+        })
+
+      Button(this.str($r('app.string.cancel')))
+        .enabled(this.running)
+        .layoutWeight(1)
+        .height(40)
+        .fontSize(14)
+        .backgroundColor(this.running ? $r('app.color.primary_color') : $r('app.color.disabled_bg'))
+        .fontColor(this.running ? $r('app.color.card_color') : $r('app.color.text_tertiary'))
+        .onClick(() => {
+          this.cancelBatch();
+        })
+
+      Button(this.str($r('app.string.batch_export')))
+        .enabled(this.results.length > 0 && !this.running)
+        .layoutWeight(1)
+        .height(40)
+        .fontSize(14)
+        .backgroundColor(this.results.length > 0 && !this.running ?
+          $r('app.color.primary_color') : $r('app.color.disabled_bg'))
+        .fontColor(this.results.length > 0 && !this.running ?
+          $r('app.color.card_color') : $r('app.color.text_tertiary'))
+        .onClick(() => {
+          this.exportCsv();
+        })
+    }
+    .width('100%')
+    .margin({ top: 12 })
+
+    if (this.errText !== '') {
+      Text(this.errText)
+        .fontSize(14)
+        .fontColor($r('app.color.danger_color'))
+        .margin({ top: 12 })
+        .alignSelf(ItemAlign.Start)
+    }
+
+    if (this.totalCount > 0) {
+      Text(this.running ?
+        this.str($r('app.string.batch_progress'), this.doneCount, this.totalCount) :
+        this.str($r('app.string.batch_done'), this.doneCount))
+        .fontSize(13)
+        .fontColor($r('app.color.text_secondary'))
+        .margin({ top: 12 })
+        .alignSelf(ItemAlign.Start)
+    }
+  }
+
+  @Builder
+  resultGroup() {
+    // 结果表
+    Column() {
+      Row() {
+        Text(this.str($r('app.string.file_name')))
+          .fontSize(13)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_secondary'))
+          .layoutWeight(1)
+        Text(this.str($r('app.string.algorithm')))
+          .fontSize(13)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_secondary'))
+          .width(64)
+        Text(this.str($r('app.string.file_size')))
+          .fontSize(13)
+          .fontWeight(FontWeight.Medium)
+          .fontColor($r('app.color.text_secondary'))
+          .width(72)
+          .textAlign(TextAlign.End)
+      }
+      .width('100%')
+      .padding({ left: 12, right: 12, top: 10, bottom: 10 })
+
+      Divider().color($r('app.color.divider_color'))
+
+      List() {
+        ForEach(this.results, (item: HashResultItem, index: number) => {
+          ListItem() {
+            Column() {
+              Row() {
+                Text(item.fileName)
+                  .fontSize(13)
+                  .fontColor($r('app.color.text_primary'))
+                  .maxLines(1)
+                  .textOverflow({ overflow: TextOverflow.MARQUEE })
+                  .layoutWeight(1)
+                Text(item.ok ? item.algo.toUpperCase() : '-')
+                  .fontSize(13)
+                  .fontColor($r('app.color.text_secondary'))
+                  .width(64)
+                Text(FormatUtil.formatSize(item.size, this.sizeUnit))
+                  .fontSize(13)
+                  .fontColor($r('app.color.text_secondary'))
+                  .width(72)
+                  .textAlign(TextAlign.End)
+              }
+              .width('100%')
+
+              Row() {
+                Text(item.ok ? item.hashValue : this.str($r('app.string.error_hash')))
+                  .fontSize(11)
+                  .fontFamily('monospace')
+                  .fontColor(item.ok ? $r('app.color.hash_text_color') : $r('app.color.danger_color'))
+                  .copyOption(CopyOptions.LocalDevice)
+                  .layoutWeight(1)
+                  .textAlign(TextAlign.Start)
+                if (item.ok) {
+                  Button(this.str($r('app.string.copy')))
+                    .height(26)
+                    .fontSize(11)
+                    .padding({ left: 10, right: 10 })
+                    .margin({ left: 8 })
+                    .backgroundColor($r('app.color.chip_bg'))
+                    .fontColor($r('app.color.primary_color'))
+                    .onClick(() => {
+                      this.copyResult(item.hashValue);
+                    })
+                }
+              }
+              .width('100%')
+              .margin({ top: 4 })
+            }
+            .padding({ left: 12, right: 12, top: 8, bottom: 8 })
+          }
+        }, (item: HashResultItem, index: number) => `${index}_${item.fileName}`)
+      }
+      .width('100%')
+      .height(Math.min(this.results.length * 88 + 10, 320))
+    }
+    .borderRadius(16)
+    .backgroundColor($r('app.color.card_color'))
+    .width('100%')
+    .margin({ top: this.isWide ? 0 : 12 })
+    .visibility(this.results.length > 0 ? Visibility.Visible : Visibility.None)
+
+    if (this.results.length === 0 && this.isWide) {
+      // 宽屏右栏空态：居中提示
+      Text(this.str($r('app.string.result_empty')))
+        .fontSize(13)
+        .fontColor($r('app.color.text_tertiary'))
+        .margin({ top: 24 })
+        .width('100%')
+        .textAlign(TextAlign.Center)
+    }
+  }
+
   build() {
     Scroll(this.scroller) {
       Column() {
-        // 文件多选 + 算法：虚线拖入区，支持点击选择或拖拽文件
-        Column() {
-          Text(this.fileUris.length === 0 ?
-            (this.isWide ? this.str($r('app.string.drop_zone_hint')) :
-              this.str($r('app.string.drop_zone_hint_phone'))) :
-            this.str($r('app.string.batch_selected_count'), this.fileUris.length))
-            .fontSize(14)
-            .fontColor(this.fileUris.length === 0 ? $r('app.color.text_secondary') : $r('app.color.text_primary'))
-            .maxLines(1)
-            .textOverflow({ overflow: TextOverflow.MARQUEE })
-            .width('100%')
-
-          Button(this.str($r('app.string.batch_select_files')))
-            .height(36)
-            .fontSize(13)
-            .margin({ top: 10 })
-            .backgroundColor($r('app.color.chip_bg'))
-            .fontColor($r('app.color.primary_color'))
-            .onClick(() => {
-              this.pickFiles();
-            })
-        }
-        .alignItems(HorizontalAlign.Center)
-        .padding(20)
-        .borderRadius(16)
-        .border({
-          width: 1.5,
-          style: BorderStyle.Dashed,
-          color: $r('app.color.divider_color')
-        })
-        .backgroundColor($r('app.color.card_color'))
-        .width('100%')
-        .allowDrop([utd.UniformDataType.FILE, utd.UniformDataType.FILE_URI])
-        .onDrop((event: DragEvent) => {
-          this.onDropFiles(event);
-        })
-
-        // 算法选择（与对比页一致的分段按钮）
-        TabSegmentButtonV2({
-          items: this.algoItems,
-          selectedIndex: this.algoIndex,
-          $selectedIndex: (index: number) => {
-            this.algoIndex = index;
-          },
-          enableStateAnimation: true
-        })
-        .width('100%')
-        .margin({ top: 12 })
-
-        // 操作行
-        Row({ space: 8 }) {
-          Button(this.running ? this.str($r('app.string.computing')) : this.str($r('app.string.batch_start')))
-            .enabled(!this.running && this.fileUris.length > 0)
+        if (this.isWide) {
+          Row({ space: 12 }) {
+            Column() {
+              this.inputGroup()
+            }
+            .alignItems(HorizontalAlign.Start)
             .layoutWeight(1)
-            .height(40)
-            .fontSize(14)
-            .backgroundColor(this.running || this.fileUris.length === 0 ?
-              $r('app.color.disabled_bg') : $r('app.color.primary_color'))
-            .fontColor(this.running || this.fileUris.length === 0 ?
-              $r('app.color.text_tertiary') : $r('app.color.card_color'))
-            .onClick(() => {
-              this.runBatch();
-            })
 
-          Button(this.str($r('app.string.cancel')))
-            .enabled(this.running)
+            Column() {
+              this.resultGroup()
+            }
+            .alignItems(HorizontalAlign.Start)
             .layoutWeight(1)
-            .height(40)
-            .fontSize(14)
-            .backgroundColor(this.running ? $r('app.color.primary_color') : $r('app.color.disabled_bg'))
-            .fontColor(this.running ? $r('app.color.card_color') : $r('app.color.text_tertiary'))
-            .onClick(() => {
-              this.cancelBatch();
-            })
-
-          Button(this.str($r('app.string.batch_export')))
-            .enabled(this.results.length > 0 && !this.running)
-            .layoutWeight(1)
-            .height(40)
-            .fontSize(14)
-            .backgroundColor(this.results.length > 0 && !this.running ?
-              $r('app.color.primary_color') : $r('app.color.disabled_bg'))
-            .fontColor(this.results.length > 0 && !this.running ?
-              $r('app.color.card_color') : $r('app.color.text_tertiary'))
-            .onClick(() => {
-              this.exportCsv();
-            })
-        }
-        .width('100%')
-        .margin({ top: 12 })
-
-        if (this.errText !== '') {
-          Text(this.errText)
-            .fontSize(14)
-            .fontColor($r('app.color.danger_color'))
-            .margin({ top: 12 })
-            .alignSelf(ItemAlign.Start)
-        }
-
-        if (this.totalCount > 0) {
-          Text(this.running ?
-            this.str($r('app.string.batch_progress'), this.doneCount, this.totalCount) :
-            this.str($r('app.string.batch_done'), this.doneCount))
-            .fontSize(13)
-            .fontColor($r('app.color.text_secondary'))
-            .margin({ top: 12 })
-            .alignSelf(ItemAlign.Start)
-        }
-
-        // 结果表
-        Column() {
-          Row() {
-            Text(this.str($r('app.string.file_name')))
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_secondary'))
-              .layoutWeight(1)
-            Text(this.str($r('app.string.algorithm')))
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_secondary'))
-              .width(64)
-            Text(this.str($r('app.string.file_size')))
-              .fontSize(13)
-              .fontWeight(FontWeight.Medium)
-              .fontColor($r('app.color.text_secondary'))
-              .width(72)
-              .textAlign(TextAlign.End)
           }
           .width('100%')
-          .padding({ left: 12, right: 12, top: 10, bottom: 10 })
-
-          Divider().color($r('app.color.divider_color'))
-
-          List() {
-            ForEach(this.results, (item: HashResultItem, index: number) => {
-              ListItem() {
-                Column() {
-                  Row() {
-                    Text(item.fileName)
-                      .fontSize(13)
-                      .fontColor($r('app.color.text_primary'))
-                      .maxLines(1)
-                      .textOverflow({ overflow: TextOverflow.MARQUEE })
-                      .layoutWeight(1)
-                    Text(item.ok ? item.algo.toUpperCase() : '-')
-                      .fontSize(13)
-                      .fontColor($r('app.color.text_secondary'))
-                      .width(64)
-                    Text(FormatUtil.formatSize(item.size, this.sizeUnit))
-                      .fontSize(13)
-                      .fontColor($r('app.color.text_secondary'))
-                      .width(72)
-                      .textAlign(TextAlign.End)
-                  }
-                  .width('100%')
-
-                  Row() {
-                    Text(item.ok ? item.hashValue : this.str($r('app.string.error_hash')))
-                      .fontSize(11)
-                      .fontFamily('monospace')
-                      .fontColor(item.ok ? $r('app.color.hash_text_color') : $r('app.color.danger_color'))
-                      .copyOption(CopyOptions.LocalDevice)
-                      .layoutWeight(1)
-                      .textAlign(TextAlign.Start)
-                    if (item.ok) {
-                      Button(this.str($r('app.string.copy')))
-                        .height(26)
-                        .fontSize(11)
-                        .padding({ left: 10, right: 10 })
-                        .margin({ left: 8 })
-                        .backgroundColor($r('app.color.chip_bg'))
-                        .fontColor($r('app.color.primary_color'))
-                        .onClick(() => {
-                          this.copyResult(item.hashValue);
-                        })
-                    }
-                  }
-                  .width('100%')
-                  .margin({ top: 4 })
-                }
-                .padding({ left: 12, right: 12, top: 8, bottom: 8 })
-              }
-            }, (item: HashResultItem, index: number) => `${index}_${item.fileName}`)
+          .alignItems(VerticalAlign.Top)
+        } else {
+          Column() {
+            this.inputGroup()
+            this.resultGroup()
           }
           .width('100%')
-          .height(Math.min(this.results.length * 88 + 10, 320))
         }
-        .borderRadius(16)
-        .backgroundColor($r('app.color.card_color'))
-        .width('100%')
-        .margin({ top: 12 })
-        .visibility(this.results.length > 0 ? Visibility.Visible : Visibility.None)
 
         Text('').height(24)
       }

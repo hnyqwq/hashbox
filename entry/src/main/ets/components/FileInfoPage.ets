@@ -136,8 +136,7 @@ export struct FileInfoPage {
         // 虚线拖入区：点击选择或拖入文件
         Column() {
           Text(this.fileName === '' ?
-            (this.isWide ? this.str($r('app.string.drop_zone_hint')) :
-              this.str($r('app.string.drop_zone_hint_phone'))) : this.fileName)
+            this.str($r('app.string.drop_zone_hint')) : this.fileName)
             .fontSize(this.fileName === '' ? 15 : 14)
             .fontWeight(this.fileName === '' ? FontWeight.Medium : FontWeight.Normal)
             .fontColor(this.fileName === '' ? $r('app.color.text_secondary') : $r('app.color.text_primary'))
@@ -178,7 +177,7 @@ export struct FileInfoPage {
               this.applyFile(uris[0]);
             }
           });
-        })
+        }, { disableDataPrefetch: true })
 
         // 信息卡片
         if (this.loaded) {

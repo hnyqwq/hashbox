@@ -173,9 +173,7 @@ export struct VerifyPage {
   inputGroup() {
     // 文件选择卡片：虚线拖入区，支持点击选择或拖拽文件
     Column() {
-      Text(this.fileName === '' ?
-        (this.isWide ? this.str($r('app.string.drop_zone_hint')) :
-          this.str($r('app.string.drop_zone_hint_phone'))) : this.fileName)
+      Text(this.fileName === '' ? this.str($r('app.string.drop_zone_hint')) : this.fileName)
         .fontSize(this.fileName === '' ? 15 : 14)
         .fontWeight(this.fileName === '' ? FontWeight.Medium : FontWeight.Normal)
         .fontColor(this.fileName === '' ? $r('app.color.text_secondary') : $r('app.color.text_primary'))
@@ -212,7 +210,7 @@ export struct VerifyPage {
     .allowDrop([utd.UniformDataType.FILE, utd.UniformDataType.FILE_URI])
     .onDrop((event: DragEvent) => {
       this.onDropFile(event);
-    })
+    }, { disableDataPrefetch: true })
 
     // 算法选择
     Column() {
@@ -258,7 +256,7 @@ export struct VerifyPage {
       Text(this.errText)
         .fontSize(14)
         .fontColor($r('app.color.danger_color'))
-        .margin({ top: 16 })
+        .margin({ top: this.isWide ? 0 : 16 })
         .alignSelf(ItemAlign.Start)
     }
 
@@ -285,12 +283,14 @@ export struct VerifyPage {
       .borderRadius(16)
       .backgroundColor($r('app.color.card_color'))
       .width('100%')
-      .margin({ top: 16 })
+      .margin({ top: this.isWide ? 0 : 16 })
     } else {
       Text(this.str($r('app.string.result_empty')))
         .fontSize(13)
         .fontColor($r('app.color.text_tertiary'))
         .margin({ top: 24 })
+        .width('100%')
+        .textAlign(this.isWide ? TextAlign.Center : TextAlign.Start)
     }
   }
 }

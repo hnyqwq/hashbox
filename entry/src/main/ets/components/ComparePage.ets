@@ -244,8 +244,7 @@ export struct ComparePage {
     Column() {
       Row() {
         Text($$.slot.fileName === '' ?
-          (this.isWide ? this.str($r('app.string.drop_zone_hint')) :
-            this.str($r('app.string.drop_zone_hint_phone'))) : $$.slot.fileName)
+          this.str($r('app.string.drop_zone_hint')) : $$.slot.fileName)
           .fontSize(14)
           .fontColor($$.slot.fileName === '' ? $r('app.color.text_tertiary') : $r('app.color.text_primary'))
           .maxLines(1)
@@ -297,11 +296,116 @@ export struct ComparePage {
     })
     .backgroundColor($r('app.color.card_color'))
     .width('100%')
-    .margin({ top: this.isWide || $$.target === 0 ? 0 : 12 })
+    .margin({ top: $$.target === 0 ? 0 : 12 })
     .allowDrop([utd.UniformDataType.FILE, utd.UniformDataType.FILE_URI])
     .onDrop((event: DragEvent) => {
       this.onDropSlot(event, $$.target);
+    }, { disableDataPrefetch: true })
+  }
+
+  @Builder
+  algoGroup() {
+    // 算法
+    TabSegmentButtonV2({
+      items: this.algoItems,
+      selectedIndex: this.algoIndex,
+      $selectedIndex: (index: number) => {
+        this.algoIndex = index;
+        this.compareVisible = false;
+      },
+      enableStateAnimation: true
     })
+      .width('100%')
+      .margin({ top: 12 })
+
+    Button(this.busy ? this.str($r('app.string.computing')) : this.str($r('app.string.compute')))
+      .enabled(!this.busy)
+      .width('100%')
+      .height(44)
+      .margin({ top: 16 })
+      .backgroundColor(this.busy ? $r('app.color.disabled_bg') : $r('app.color.primary_color'))
+      .fontColor(this.busy ? $r('app.color.text_tertiary') : $r('app.color.card_color'))
+      .onClick(() => {
+        this.computeAndCompare();
+      })
+  }
+
+  @Builder
+  resultGroup() {
+    // 粘贴哈希值
+    Column() {
+      Row() {
+        // 默认两行高的文本框，方便核对长哈希
+        TextArea({ placeholder: this.str($r('app.string.paste_hash_hint')), text: this.pastedHash })
+          .fontSize(14)
+          .fontColor($r('app.color.text_primary'))
+          .placeholderColor($r('app.color.text_tertiary'))
+          .backgroundColor($r('app.color.chip_bg'))
+          .borderRadius(8)
+          .layoutWeight(1)
+          .height(72)
+          .onChange((value: string) => {
+            this.pastedHash = value;
+          })
+
+        // 右侧一列：安全粘贴按钮 + 扫码按钮上下排列
+        Column({ space: 8 }) {
+          // 剪贴板读取走 PasteButton 安全控件：点击即临时授权，无需权限申请
+          PasteButton()
+            .height(32)
+            .fontSize(12)
+            .onClick(this.handlePasteButtonClick)
+
+          Button(this.str($r('app.string.scan_qr')))
+            .height(32)
+            .fontSize(12)
+            .padding({ left: 12, right: 12 })
+            .backgroundColor($r('app.color.chip_bg'))
+            .fontColor($r('app.color.primary_color'))
+            .onClick(() => {
+              this.scanExpected();
+            })
+        }
+        .margin({ left: 8 })
+        .justifyContent(FlexAlign.Center)
+      }
+      .width('100%')
+    }
+    .padding(16)
+    .borderRadius(16)
+    .backgroundColor($r('app.color.card_color'))
+    .width('100%')
+    .margin({ top: this.isWide ? 0 : 12 })
+
+    if (this.compareVisible) {
+      Row({ space: 8 }) {
+        SymbolGlyph(this.compareSame ? $r('sys.symbol.checkmark') : $r('sys.symbol.xmark'))
+          .fontSize(24)
+          .fontColor([this.compareSame ? $r('app.color.success_color') : $r('app.color.danger_color')])
+        Text(this.compareText)
+          .fontSize(18)
+          .fontWeight(FontWeight.Bold)
+          .fontColor(this.compareSame ? $r('app.color.success_color') : $r('app.color.danger_color'))
+          .textAlign(TextAlign.Center)
+      }
+      .width('100%')
+      .padding({ left: 16, right: 16, top: 20, bottom: 20 })
+      .borderRadius(16)
+      .backgroundColor($r('app.color.card_color'))
+      .border({ width: 2, color: this.compareSame ?
+        $r('app.color.success_color') :
+        $r('app.color.danger_color') })
+      .justifyContent(FlexAlign.Center)
+      .margin({ top: 16 })
+    } else if (this.isWide) {
+      // 宽屏右栏空态：居中提示
+      Text(this.str($r('app.string.result_empty')))
+        .fontSize(13)
+        .fontColor($r('app.color.text_tertiary'))
+        .margin({ top: 24 })
+        .width('100%')
+        .textAlign(TextAlign.Center)
+    }
   }
 
   build() {
@@ -309,105 +413,30 @@ export struct ComparePage {
       Column() {
         if (this.isWide) {
           Row({ space: 12 }) {
-            this.slotCard({ slot: this.slotA, target: 0 })
-            this.slotCard({ slot: this.slotB, target: 1 })
+            Column() {
+              this.slotCard({ slot: this.slotA, target: 0 })
+              this.slotCard({ slot: this.slotB, target: 1 })
+              this.algoGroup()
+            }
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
+
+            Column() {
+              this.resultGroup()
+            }
+            .alignItems(HorizontalAlign.Start)
+            .layoutWeight(1)
           }
           .width('100%')
           .alignItems(VerticalAlign.Top)
         } else {
-          this.slotCard({ slot: this.slotA, target: 0 })
-          this.slotCard({ slot: this.slotB, target: 1 })
-        }
-
-        // 算法
-        TabSegmentButtonV2({
-          items: this.algoItems,
-          selectedIndex: this.algoIndex,
-          $selectedIndex: (index: number) => {
-            this.algoIndex = index;
-            this.compareVisible = false;
-          },
-          enableStateAnimation: true
-        })
-          .width('100%')
-          .margin({ top: 12 })
-
-        // 粘贴哈希值
-        Column() {
-          Row() {
-            // 默认两行高的文本框，方便核对长哈希
-            TextArea({ placeholder: this.str($r('app.string.paste_hash_hint')), text: this.pastedHash })
-              .fontSize(14)
-              .fontColor($r('app.color.text_primary'))
-              .placeholderColor($r('app.color.text_tertiary'))
-              .backgroundColor($r('app.color.chip_bg'))
-              .borderRadius(8)
-              .layoutWeight(1)
-              .height(72)
-              .onChange((value: string) => {
-                this.pastedHash = value;
-              })
-
-            // 右侧一列：安全粘贴按钮 + 扫码按钮上下排列
-            Column({ space: 8 }) {
-              // 剪贴板读取走 PasteButton 安全控件：点击即临时授权，无需权限申请
-              PasteButton()
-                .height(32)
-                .fontSize(12)
-                .onClick(this.handlePasteButtonClick)
-
-              Button(this.str($r('app.string.scan_qr')))
-                .height(32)
-                .fontSize(12)
-                .padding({ left: 12, right: 12 })
-                .backgroundColor($r('app.color.chip_bg'))
-                .fontColor($r('app.color.primary_color'))
-                .onClick(() => {
-                  this.scanExpected();
-                })
-            }
-            .margin({ left: 8 })
-            .justifyContent(FlexAlign.Center)
+          Column() {
+            this.slotCard({ slot: this.slotA, target: 0 })
+            this.slotCard({ slot: this.slotB, target: 1 })
+            this.algoGroup()
+            this.resultGroup()
           }
           .width('100%')
-        }
-        .padding(16)
-        .borderRadius(16)
-        .backgroundColor($r('app.color.card_color'))
-        .width('100%')
-        .margin({ top: 12 })
-
-        Button(this.busy ? this.str($r('app.string.computing')) : this.str($r('app.string.compute')))
-          .enabled(!this.busy)
-          .width('100%')
-          .height(44)
-          .margin({ top: 16 })
-          .backgroundColor(this.busy ? $r('app.color.disabled_bg') : $r('app.color.primary_color'))
-          .fontColor(this.busy ? $r('app.color.text_tertiary') : $r('app.color.card_color'))
-          .onClick(() => {
-            this.computeAndCompare();
-          })
-
-        if (this.compareVisible) {
-          Row({ space: 8 }) {
-            SymbolGlyph(this.compareSame ? $r('sys.symbol.checkmark') : $r('sys.symbol.xmark'))
-              .fontSize(24)
-              .fontColor([this.compareSame ? $r('app.color.success_color') : $r('app.color.danger_color')])
-            Text(this.compareText)
-              .fontSize(18)
-              .fontWeight(FontWeight.Bold)
-              .fontColor(this.compareSame ? $r('app.color.success_color') : $r('app.color.danger_color'))
-              .textAlign(TextAlign.Center)
-          }
-          .width('100%')
-          .padding({ left: 16, right: 16, top: 20, bottom: 20 })
-          .borderRadius(16)
-          .backgroundColor($r('app.color.card_color'))
-          .border({ width: 2, color: this.compareSame ?
-            $r('app.color.success_color') :
-            $r('app.color.danger_color') })
-          .justifyContent(FlexAlign.Center)
-          .margin({ top: 16 })
         }
 
         Text('').height(24)
