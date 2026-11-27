@@ -20,6 +20,7 @@
     { "name": "computing", "value": "Computing…" },
     { "name": "copy", "value": "Copy" },
     { "name": "copied", "value": "Copied to clipboard" },
+    { "name": "privacy_statement", "value": "Privacy Statement" },
     { "name": "clipboard_empty", "value": "No text in clipboard" },
     { "name": "paste_from_clipboard", "value": "Paste from clipboard" },
     { "name": "paste_hash_hint", "value": "Paste or enter the hash to compare" },

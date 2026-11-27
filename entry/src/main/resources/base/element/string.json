@@ -20,6 +20,7 @@
     { "name": "computing", "value": "计算中…" },
     { "name": "copy", "value": "复制" },
     { "name": "copied", "value": "已复制到剪贴板" },
+    { "name": "privacy_statement", "value": "隐私声明" },
     { "name": "clipboard_empty", "value": "剪贴板中没有文本" },
     { "name": "paste_from_clipboard", "value": "从剪贴板粘贴" },
     { "name": "paste_hash_hint", "value": "粘贴或输入待比对的哈希值" },

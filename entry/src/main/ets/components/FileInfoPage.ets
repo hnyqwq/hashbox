@@ -1,4 +1,4 @@
-import { common } from '@kit.AbilityKit';
+import { common, Want } from '@kit.AbilityKit';
 import { fileIo, picker } from '@kit.CoreFileKit';
 import { pasteboard } from '@kit.BasicServicesKit';
 import { uniformTypeDescriptor as utd } from '@kit.ArkData';
@@ -118,6 +118,20 @@ export struct FileInfoPage {
     const next = this.hashRows.slice();
     next[index] = { algo: ALGO_CODES[index], value: value, failed: failed };
     this.hashRows = next;
+  }
+
+  private openPrivacy(): void {
+    try {
+      const want: Want = {
+        action: 'ohos.want.action.viewData',
+        entities: ['entity.system.browsable'],
+        uri: 'https://agreement-drcn.hispace.dbankcloud.cn/index.html?lang=zh&agreementId=2092349430081526528',
+        type: 'text/plain'
+      };
+      (getContext(this) as common.UIAbilityContext).startAbility(want);
+    } catch (e) {
+      console.error('openPrivacy failed');
+    }
   }
 
   private copyValue(value: string): void {
@@ -243,6 +257,24 @@ export struct FileInfoPage {
           .width('100%')
           .margin({ top: 12 })
         }
+
+        // 底部：隐私声明 + 包名
+        Column() {
+          Text() {
+            Span(this.str($r('app.string.privacy_statement')))
+              .onClick(() => {
+                this.openPrivacy();
+              })
+              .fontColor(Color.Blue)
+              .fontSize(12);
+          }
+          Text((getContext(this) as common.UIAbilityContext).abilityInfo.bundleName)
+            .fontSize(12)
+            .opacity(0.6)
+        }
+        .width('100%')
+        .alignItems(HorizontalAlign.Center)
+        .margin({ top: 24 })
 
         Text('')
           .height(24)
